@@ -1,0 +1,32 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import type { ThemeMode } from '@/lib/types';
+
+const THEME_STORAGE_KEY = 'cpu-visualizer-theme-v2';
+const NEXT_THEME: Record<ThemeMode, ThemeMode> = { light: 'dark', dark: 'light' };
+
+function applyTheme(theme: ThemeMode): void {
+  document.documentElement.dataset.theme = theme;
+}
+
+export function useTheme() {
+  const [theme, setTheme] = useState<ThemeMode>('light');
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') {
+      setTheme(saved);
+      applyTheme(saved);
+    }
+  }, []);
+
+  function toggleTheme() {
+    const next = NEXT_THEME[theme];
+    setTheme(next);
+    applyTheme(next);
+    window.localStorage.setItem(THEME_STORAGE_KEY, next);
+  }
+
+  return { theme, toggleTheme };
+}
