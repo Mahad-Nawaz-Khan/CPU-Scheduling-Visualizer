@@ -16,7 +16,7 @@ interface SimulatorViewProps {
   onOpenLearn: () => void;
 }
 
-export function SimulatorView({ simulator, onOpenLearn }: SimulatorViewProps) {
+export function SimulatorView({ simulator, onOpenLearn }: Readonly<SimulatorViewProps>) {
   const meta = ALGORITHM_META[simulator.algorithmId];
 
   return (

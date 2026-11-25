@@ -1,7 +1,13 @@
 import { DEFAULT_QUANTUM, MAX_QUANTUM, MIN_QUANTUM } from '../constants';
 import { formatUnits } from '../format';
 import { clampInteger } from '../presets';
-import type { DecisionEvent, ProcessInput, SimulationResult, TickSnapshot, TimelineSegment } from '../types';
+import type {
+  DecisionEvent,
+  ProcessInput,
+  SimulationResult,
+  TickSnapshot,
+  TimelineSegment,
+} from '../types';
 import {
   appendTickToTimeline,
   buildFinalSnapshot,
@@ -10,7 +16,8 @@ import {
   createEmptySimulation,
   createInitialStates,
   finalizeResult,
-  markLastSegmentFlag,
+  markSegmentCompleted,
+  markSegmentPreempted,
   recordArrivalsAtTick,
   type SimProcessState,
 } from './helpers';
@@ -27,6 +34,116 @@ function enqueueArrivalsForTick(
       enqueuedIds.add(state.id);
     }
   }
+}
+
+function dispatchFromQueue(
+  readyQueue: SimProcessState[],
+  currentTime: number,
+  timeQuantum: number,
+  events: DecisionEvent[],
+): SimProcessState | null {
+  const next = readyQueue.shift() ?? null;
+  if (next === null) {
+    events.push({
+      time: currentTime,
+      type: 'idle',
+      processId: null,
+      message: 'The CPU is idle because the line is empty.',
+    });
+    return null;
+  }
+
+  events.push({
+    time: currentTime,
+    type: 'dispatch',
+    processId: next.id,
+    message: `${next.id} is at the front of the line, so it gets the CPU for up to ${formatUnits(timeQuantum)}.`,
+  });
+  return next;
+}
+
+function handleQuantumExpired(
+  running: SimProcessState,
+  readyQueue: SimProcessState[],
+  timeline: TimelineSegment[],
+  nextTime: number,
+  pendingEvents: DecisionEvent[],
+): SimProcessState | null {
+  if (readyQueue.length === 0) {
+    pendingEvents.push({
+      time: nextTime,
+      type: 'quantum',
+      processId: running.id,
+      message: `${running.id} used up its time slice, but nobody else is waiting, so it keeps the CPU.`,
+    });
+    return running;
+  }
+
+  markSegmentPreempted(timeline);
+  const queuedAhead = readyQueue.map((item) => item.id).join(', ');
+  readyQueue.push(running);
+  pendingEvents.push({
+    time: nextTime,
+    type: 'preempt',
+    processId: running.id,
+    message: `${running.id} used up its time slice, so it goes to the back of the line behind ${queuedAhead}.`,
+  });
+  return null;
+}
+
+function advanceRoundRobinTick(
+  running: SimProcessState | null,
+  quantumUsed: number,
+  timeQuantum: number,
+  states: SimProcessState[],
+  readyQueue: SimProcessState[],
+  enqueuedIds: Set<string>,
+  timeline: TimelineSegment[],
+  currentTime: number,
+  pendingEvents: DecisionEvent[],
+): { nextRunning: SimProcessState | null; nextQuantumUsed: number; finishedOne: boolean } {
+  const nextTime = currentTime + 1;
+
+  if (running === null) {
+    appendTickToTimeline(timeline, null, currentTime, 'Ready queue empty');
+    enqueueArrivalsForTick(states, readyQueue, enqueuedIds, nextTime);
+    return { nextRunning: null, nextQuantumUsed: 0, finishedOne: false };
+  }
+
+  appendTickToTimeline(
+    timeline,
+    running.id,
+    currentTime,
+    `Round Robin FIFO slice (Time Quantum=${timeQuantum})`,
+  );
+  running.remaining -= 1;
+  const updatedQuantum = quantumUsed + 1;
+  enqueueArrivalsForTick(states, readyQueue, enqueuedIds, nextTime);
+
+  if (running.remaining === 0) {
+    running.completed = true;
+    markSegmentCompleted(timeline);
+    pendingEvents.push({
+      time: nextTime,
+      type: 'complete',
+      processId: running.id,
+      message: `${running.id} finishes its work at time ${nextTime}.`,
+    });
+    return { nextRunning: null, nextQuantumUsed: 0, finishedOne: true };
+  }
+
+  if (updatedQuantum < timeQuantum) {
+    return { nextRunning: running, nextQuantumUsed: updatedQuantum, finishedOne: false };
+  }
+
+  const nextRunning = handleQuantumExpired(
+    running,
+    readyQueue,
+    timeline,
+    nextTime,
+    pendingEvents,
+  );
+  return { nextRunning, nextQuantumUsed: 0, finishedOne: false };
 }
 
 export function runRoundRobin(
@@ -58,23 +175,8 @@ export function runRoundRobin(
     recordArrivalsAtTick(states, currentTime, events);
 
     if (running === null) {
-      running = readyQueue.shift() ?? null;
+      running = dispatchFromQueue(readyQueue, currentTime, timeQuantum, events);
       quantumUsed = 0;
-      if (running !== null) {
-        events.push({
-          time: currentTime,
-          type: 'dispatch',
-          processId: running.id,
-          message: `${running.id} is at the front of the line, so it gets the CPU for up to ${formatUnits(timeQuantum)}.`,
-        });
-      } else {
-        events.push({
-          time: currentTime,
-          type: 'idle',
-          processId: null,
-          message: 'The CPU is idle because the line is empty.',
-        });
-      }
     }
 
     const { completedIds, notArrivedIds } = collectProcessLists(
@@ -93,56 +195,21 @@ export function runRoundRobin(
       events,
     });
 
-    if (running !== null) {
-      appendTickToTimeline(
-        timeline,
-        running.id,
-        currentTime,
-        `Round Robin FIFO slice (Time Quantum=${timeQuantum})`,
-      );
-      running.remaining -= 1;
-      quantumUsed += 1;
-
-      const nextTime = currentTime + 1;
-      enqueueArrivalsForTick(states, readyQueue, enqueuedIds, nextTime);
-
-      if (running.remaining === 0) {
-        running.completed = true;
-        completedCount += 1;
-        markLastSegmentFlag(timeline, 'completed');
-        pendingEvents.push({
-          time: nextTime,
-          type: 'complete',
-          processId: running.id,
-          message: `${running.id} finishes its work at time ${nextTime}.`,
-        });
-        running = null;
-        quantumUsed = 0;
-      } else if (quantumUsed === timeQuantum) {
-        if (readyQueue.length > 0) {
-          markLastSegmentFlag(timeline, 'preempted');
-          readyQueue.push(running);
-          pendingEvents.push({
-            time: nextTime,
-            type: 'preempt',
-            processId: running.id,
-            message: `${running.id} used up its time slice, so it goes to the back of the line behind ${readyQueue.slice(0, -1).map((item) => item.id).join(', ')}.`,
-          });
-          running = null;
-          quantumUsed = 0;
-        } else {
-          pendingEvents.push({
-            time: nextTime,
-            type: 'quantum',
-            processId: running.id,
-            message: `${running.id} used up its time slice, but nobody else is waiting, so it keeps the CPU.`,
-          });
-          quantumUsed = 0;
-        }
-      }
-    } else {
-      appendTickToTimeline(timeline, null, currentTime, 'Ready queue empty');
-      enqueueArrivalsForTick(states, readyQueue, enqueuedIds, currentTime + 1);
+    const step = advanceRoundRobinTick(
+      running,
+      quantumUsed,
+      timeQuantum,
+      states,
+      readyQueue,
+      enqueuedIds,
+      timeline,
+      currentTime,
+      pendingEvents,
+    );
+    running = step.nextRunning;
+    quantumUsed = step.nextQuantumUsed;
+    if (step.finishedOne) {
+      completedCount += 1;
     }
 
     currentTime += 1;

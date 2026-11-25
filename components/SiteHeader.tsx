@@ -34,7 +34,12 @@ const THEME_TOGGLE_ICON: Record<ThemeMode, LucideIcon> = {
   dark: Sun,
 };
 
-export function SiteHeader({ view, theme, onChangeView, onToggleTheme }: SiteHeaderProps) {
+export function SiteHeader({
+  view,
+  theme,
+  onChangeView,
+  onToggleTheme,
+}: Readonly<SiteHeaderProps>) {
   const ThemeIcon = THEME_TOGGLE_ICON[theme];
 
   return (

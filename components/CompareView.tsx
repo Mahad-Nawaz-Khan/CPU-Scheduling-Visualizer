@@ -29,7 +29,7 @@ export function CompareView({
   onChangeQuantum,
   onOpenStrategy,
   onExport,
-}: CompareViewProps) {
+}: Readonly<CompareViewProps>) {
   const colorMap = buildProcessColorMap(processes);
   const ranked = [...results].sort(
     (a, b) => a.summary.averageWaitingTime - b.summary.averageWaitingTime,
@@ -221,7 +221,7 @@ interface MiniTimelineProps {
   colorMap: Map<string, number>;
 }
 
-function MiniTimeline({ timeline, maxMakespan, colorMap }: MiniTimelineProps) {
+function MiniTimeline({ timeline, maxMakespan, colorMap }: Readonly<MiniTimelineProps>) {
   return (
     <div
       className="flex h-7 w-full overflow-hidden rounded-md"

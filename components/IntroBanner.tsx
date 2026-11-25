@@ -6,7 +6,7 @@ interface IntroBannerProps {
   onOpenLearn: () => void;
 }
 
-export function IntroBanner({ onOpenLearn }: IntroBannerProps) {
+export function IntroBanner({ onOpenLearn }: Readonly<IntroBannerProps>) {
   return (
     <section className="max-w-3xl">
       <p className="text-sm font-medium text-accent">Operating Systems · CPU Scheduling</p>

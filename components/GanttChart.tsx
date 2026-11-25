@@ -34,7 +34,12 @@ interface GanttBlockProps {
   colorIndex: number;
 }
 
-function GanttBlock({ segment, makespan, currentTime, colorIndex }: GanttBlockProps) {
+function GanttBlock({
+  segment,
+  makespan,
+  currentTime,
+  colorIndex,
+}: Readonly<GanttBlockProps>) {
   const visibleEnd = Math.min(segment.endTime, currentTime);
   const visibleDuration = visibleEnd - segment.startTime;
   if (visibleDuration <= 0) {
@@ -66,7 +71,12 @@ function GanttBlock({ segment, makespan, currentTime, colorIndex }: GanttBlockPr
   );
 }
 
-export function GanttChart({ timeline, processes, makespan, currentTime }: GanttChartProps) {
+export function GanttChart({
+  timeline,
+  processes,
+  makespan,
+  currentTime,
+}: Readonly<GanttChartProps>) {
   if (makespan === 0) {
     return <p className="text-sm text-muted">Add a process to see the timeline.</p>;
   }

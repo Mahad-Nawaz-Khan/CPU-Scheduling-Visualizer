@@ -14,7 +14,7 @@ export function useTheme() {
   const [theme, setTheme] = useState<ThemeMode>('light');
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const saved = globalThis.localStorage.getItem(THEME_STORAGE_KEY);
     if (saved === 'light' || saved === 'dark') {
       setTheme(saved);
       applyTheme(saved);
@@ -25,7 +25,7 @@ export function useTheme() {
     const next = NEXT_THEME[theme];
     setTheme(next);
     applyTheme(next);
-    window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    globalThis.localStorage.setItem(THEME_STORAGE_KEY, next);
   }
 
   return { theme, toggleTheme };

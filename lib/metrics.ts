@@ -1,24 +1,81 @@
 import type { ProcessInput, ProcessMetrics, SummaryMetrics, TimelineSegment } from './types';
 
+interface TimelineStats {
+  firstStartMap: Map<string, number>;
+  completionMap: Map<string, number>;
+  preemptionMap: Map<string, number>;
+  totalIdleTime: number;
+  totalPreemptions: number;
+  contextSwitches: number;
+}
+
 function roundTwo(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function countContextSwitches(timeline: TimelineSegment[]): number {
-  let switches = 0;
+function collectTimelineStats(timeline: TimelineSegment[]): TimelineStats {
+  const firstStartMap = new Map<string, number>();
+  const completionMap = new Map<string, number>();
+  const preemptionMap = new Map<string, number>();
+
+  let totalIdleTime = 0;
+  let totalPreemptions = 0;
+  let contextSwitches = 0;
   let lastActiveProcessId: string | null = null;
 
   for (const segment of timeline) {
     if (segment.processId === null) {
+      totalIdleTime += segment.duration;
       continue;
     }
+
     if (lastActiveProcessId !== null && lastActiveProcessId !== segment.processId) {
-      switches += 1;
+      contextSwitches += 1;
     }
     lastActiveProcessId = segment.processId;
+
+    if (!firstStartMap.has(segment.processId)) {
+      firstStartMap.set(segment.processId, segment.startTime);
+    }
+    completionMap.set(segment.processId, segment.endTime);
+
+    if (segment.preemptedAtEnd) {
+      preemptionMap.set(segment.processId, (preemptionMap.get(segment.processId) ?? 0) + 1);
+      totalPreemptions += 1;
+    }
   }
 
-  return switches;
+  return {
+    firstStartMap,
+    completionMap,
+    preemptionMap,
+    totalIdleTime,
+    totalPreemptions,
+    contextSwitches,
+  };
+}
+
+function buildProcessMetric(process: ProcessInput, stats: TimelineStats): ProcessMetrics {
+  const firstStartTime = stats.firstStartMap.get(process.id) ?? process.arrivalTime;
+  const completionTime = stats.completionMap.get(process.id) ?? process.arrivalTime;
+  const turnaroundTime = completionTime - process.arrivalTime;
+  const waitingTime = turnaroundTime - process.burstTime;
+  const responseTime = firstStartTime - process.arrivalTime;
+  const preemptions = stats.preemptionMap.get(process.id) ?? 0;
+
+  return {
+    id: process.id,
+    arrivalTime: process.arrivalTime,
+    burstTime: process.burstTime,
+    priority: process.priority,
+    colorIndex: process.colorIndex,
+    firstStartTime,
+    completionTime,
+    turnaroundTime,
+    waitingTime,
+    responseTime,
+    preemptions,
+  };
 }
 
 export function calculateMetrics(
@@ -44,66 +101,16 @@ export function calculateMetrics(
     };
   }
 
-  const firstStartMap = new Map<string, number>();
-  const completionMap = new Map<string, number>();
-  const preemptionMap = new Map<string, number>();
-
-  let totalIdleTime = 0;
-  let totalPreemptions = 0;
-
-  for (const segment of timeline) {
-    if (segment.processId === null) {
-      totalIdleTime += segment.duration;
-      continue;
-    }
-
-    if (!firstStartMap.has(segment.processId)) {
-      firstStartMap.set(segment.processId, segment.startTime);
-    }
-
-    completionMap.set(segment.processId, segment.endTime);
-
-    if (segment.preemptedAtEnd) {
-      const prevPreemptions = preemptionMap.get(segment.processId) ?? 0;
-      preemptionMap.set(segment.processId, prevPreemptions + 1);
-      totalPreemptions += 1;
-    }
-  }
-
-  const processMetrics: ProcessMetrics[] = processes.map((process) => {
-    const firstStartTime = firstStartMap.get(process.id) ?? process.arrivalTime;
-    const completionTime = completionMap.get(process.id) ?? process.arrivalTime;
-    const turnaroundTime = completionTime - process.arrivalTime;
-    const waitingTime = turnaroundTime - process.burstTime;
-    const responseTime = firstStartTime - process.arrivalTime;
-    const preemptions = preemptionMap.get(process.id) ?? 0;
-
-    return {
-      id: process.id,
-      arrivalTime: process.arrivalTime,
-      burstTime: process.burstTime,
-      priority: process.priority,
-      colorIndex: process.colorIndex,
-      firstStartTime,
-      completionTime,
-      turnaroundTime,
-      waitingTime,
-      responseTime,
-      preemptions,
-    };
-  });
+  const stats = collectTimelineStats(timeline);
+  const processMetrics = processes.map((process) => buildProcessMetric(process, stats));
 
   const totalProcesses = processes.length;
   const totalBurstTime = processes.reduce((sum, item) => sum + item.burstTime, 0);
-  const lastSegment = timeline[timeline.length - 1];
-  const makespan = lastSegment ? lastSegment.endTime : 0;
+  const makespan = timeline.at(-1)?.endTime ?? 0;
 
   const sumWT = processMetrics.reduce((sum, item) => sum + item.waitingTime, 0);
   const sumTAT = processMetrics.reduce((sum, item) => sum + item.turnaroundTime, 0);
   const sumRT = processMetrics.reduce((sum, item) => sum + item.responseTime, 0);
-
-  const cpuUtilization = makespan > 0 ? roundTwo((totalBurstTime / makespan) * 100) : 0;
-  const throughput = makespan > 0 ? roundTwo(totalProcesses / makespan) : 0;
 
   return {
     processMetrics,
@@ -111,11 +118,11 @@ export function calculateMetrics(
       totalProcesses,
       totalBurstTime,
       makespan,
-      totalIdleTime,
-      cpuUtilization,
-      throughput,
-      preemptionCount: totalPreemptions,
-      contextSwitches: countContextSwitches(timeline),
+      totalIdleTime: stats.totalIdleTime,
+      cpuUtilization: makespan > 0 ? roundTwo((totalBurstTime / makespan) * 100) : 0,
+      throughput: makespan > 0 ? roundTwo(totalProcesses / makespan) : 0,
+      preemptionCount: stats.totalPreemptions,
+      contextSwitches: stats.contextSwitches,
       averageWaitingTime: roundTwo(sumWT / totalProcesses),
       averageTurnaroundTime: roundTwo(sumTAT / totalProcesses),
       averageResponseTime: roundTwo(sumRT / totalProcesses),

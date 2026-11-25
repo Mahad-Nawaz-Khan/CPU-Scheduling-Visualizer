@@ -30,7 +30,7 @@ interface ResultsSummaryProps {
   onExport: () => void;
 }
 
-export function ResultsSummary({ result, onExport }: ResultsSummaryProps) {
+export function ResultsSummary({ result, onExport }: Readonly<ResultsSummaryProps>) {
   const { summary, processMetrics } = result;
 
   return (

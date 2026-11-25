@@ -16,7 +16,7 @@ export default function HomePage() {
 
   function changeView(next: AppView) {
     setView(next);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function openStrategy(id: AlgorithmId) {

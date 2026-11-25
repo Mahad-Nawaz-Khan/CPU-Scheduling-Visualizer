@@ -33,7 +33,7 @@ const FORMULAS = [
   },
 ];
 
-function SectionHeading({ title, subtitle }: { title: string; subtitle?: string }) {
+function SectionHeading({ title, subtitle }: Readonly<{ title: string; subtitle?: string }>) {
   return (
     <div className="mb-5">
       <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
@@ -42,7 +42,7 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle?: string 
   );
 }
 
-export function LearnView({ onTryScenario }: LearnViewProps) {
+export function LearnView({ onTryScenario }: Readonly<LearnViewProps>) {
   return (
     <div className="mx-auto max-w-4xl space-y-14">
       <header>

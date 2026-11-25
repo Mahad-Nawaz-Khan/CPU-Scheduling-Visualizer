@@ -7,7 +7,12 @@ interface StepSectionProps {
   children: ReactNode;
 }
 
-export function StepSection({ step, title, description, children }: StepSectionProps) {
+export function StepSection({
+  step,
+  title,
+  description,
+  children,
+}: Readonly<StepSectionProps>) {
   const headingId = `step-${step}-title`;
 
   return (

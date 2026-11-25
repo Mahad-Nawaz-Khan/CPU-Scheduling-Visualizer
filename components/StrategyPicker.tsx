@@ -24,7 +24,7 @@ export function StrategyPicker({
   timeQuantum,
   onSelect,
   onChangeQuantum,
-}: StrategyPickerProps) {
+}: Readonly<StrategyPickerProps>) {
   const meta = ALGORITHM_META[algorithmId];
 
   return (

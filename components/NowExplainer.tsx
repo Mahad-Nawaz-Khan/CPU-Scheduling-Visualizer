@@ -32,7 +32,12 @@ interface NowExplainerProps {
   makespan: number;
 }
 
-export function NowExplainer({ ticks, processes, currentTime, makespan }: NowExplainerProps) {
+export function NowExplainer({
+  ticks,
+  processes,
+  currentTime,
+  makespan,
+}: Readonly<NowExplainerProps>) {
   if (ticks.length === 0) {
     return null;
   }
@@ -68,7 +73,12 @@ interface CpuStatusCardProps {
   isFinished: boolean;
 }
 
-function CpuStatusCard({ snapshot, colorMap, currentTime, isFinished }: CpuStatusCardProps) {
+function CpuStatusCard({
+  snapshot,
+  colorMap,
+  currentTime,
+  isFinished,
+}: Readonly<CpuStatusCardProps>) {
   const runningId = snapshot.runningProcessId;
   const runningColor = runningId ? getProcessColor(colorMap.get(runningId) ?? 0) : null;
 
@@ -136,7 +146,14 @@ interface QueueRowProps {
   emptyText: string;
 }
 
-function QueueRow({ label, hint, ids, colorMap, numbered = false, emptyText }: QueueRowProps) {
+function QueueRow({
+  label,
+  hint,
+  ids,
+  colorMap,
+  numbered = false,
+  emptyText,
+}: Readonly<QueueRowProps>) {
   return (
     <div>
       <dt className="text-xs font-medium text-muted">
@@ -165,7 +182,12 @@ interface EventsCardProps {
   isFinished: boolean;
 }
 
-function EventsCard({ snapshot, history, currentTime, isFinished }: EventsCardProps) {
+function EventsCard({
+  snapshot,
+  history,
+  currentTime,
+  isFinished,
+}: Readonly<EventsCardProps>) {
   const showQuietMessage = snapshot.events.length === 0 && !isFinished;
   let quietMessage = 'The CPU is idle, waiting for the next process to arrive.';
   if (snapshot.runningProcessId !== null) {
@@ -176,8 +198,11 @@ function EventsCard({ snapshot, history, currentTime, isFinished }: EventsCardPr
     <div className="card flex flex-col p-5">
       <h3 className="text-sm font-medium text-secondary">What just happened, and why</h3>
       <ul className="mt-4 flex-1 space-y-3">
-        {snapshot.events.map((event, index) => (
-          <EventLine key={`${event.type}-${index}`} event={event} />
+        {snapshot.events.map((event) => (
+          <EventLine
+            key={`${event.time}-${event.type}-${event.processId ?? 'none'}-${event.message}`}
+            event={event}
+          />
         ))}
         {showQuietMessage && <li className="text-sm text-secondary">{quietMessage}</li>}
         {isFinished && (
@@ -193,8 +218,11 @@ function EventsCard({ snapshot, history, currentTime, isFinished }: EventsCardPr
           <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
         </summary>
         <ol className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
-          {history.map((event, index) => (
-            <li key={`${event.time}-${event.type}-${index}`} className="flex gap-3 text-sm">
+          {history.map((event) => (
+            <li
+              key={`hist-${event.time}-${event.type}-${event.processId ?? 'none'}-${event.message}`}
+              className="flex gap-3 text-sm"
+            >
               <span className="w-14 shrink-0 tabular-nums text-muted">t = {event.time}</span>
               <span className="text-secondary">{event.message}</span>
             </li>
@@ -205,7 +233,7 @@ function EventsCard({ snapshot, history, currentTime, isFinished }: EventsCardPr
   );
 }
 
-function EventLine({ event }: { event: DecisionEvent }) {
+function EventLine({ event }: Readonly<{ event: DecisionEvent }>) {
   const style = EVENT_STYLE[event.type];
   const Icon = style.icon;
 

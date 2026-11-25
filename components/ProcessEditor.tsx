@@ -68,7 +68,7 @@ export function ProcessEditor({
   onAdd,
   onUpdate,
   onRemove,
-}: ProcessEditorProps) {
+}: Readonly<ProcessEditorProps>) {
   const activePreset = PRESET_SCENARIOS.find((preset) => preset.id === presetId);
   const canAdd = processes.length < MAX_PROCESS_COUNT;
   const canRemove = processes.length > 1;

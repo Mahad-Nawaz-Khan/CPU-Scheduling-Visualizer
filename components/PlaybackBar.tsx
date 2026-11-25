@@ -32,7 +32,7 @@ export function PlaybackBar({
   onJumpToEnd,
   onSeek,
   onChangeSpeed,
-}: PlaybackBarProps) {
+}: Readonly<PlaybackBarProps>) {
   const atStart = currentTime <= 0;
   const atEnd = currentTime >= makespan;
   const PlayIcon = isPlaying ? Pause : Play;

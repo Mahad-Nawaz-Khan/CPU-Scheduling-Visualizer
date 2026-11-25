@@ -6,7 +6,7 @@ interface ProcessChipProps {
   prefix?: string;
 }
 
-export function ProcessChip({ id, colorIndex, prefix }: ProcessChipProps) {
+export function ProcessChip({ id, colorIndex, prefix }: Readonly<ProcessChipProps>) {
   const color = getProcessColor(colorIndex);
 
   return (

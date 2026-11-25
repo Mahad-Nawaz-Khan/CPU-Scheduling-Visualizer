@@ -53,11 +53,11 @@ export function useSimulator() {
       setIsPlaying(false);
       return undefined;
     }
-    const timer = window.setTimeout(
+    const timer = globalThis.setTimeout(
       () => setRequestedTime(currentTime + 1),
       PLAYBACK_SPEED_INTERVAL_MS[speed],
     );
-    return () => window.clearTimeout(timer);
+    return () => globalThis.clearTimeout(timer);
   }, [isPlaying, currentTime, makespan, speed]);
 
   function showFinalState() {
