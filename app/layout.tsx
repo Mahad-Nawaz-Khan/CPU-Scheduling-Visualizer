@@ -1,16 +1,28 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const geistSans = Geist({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-sans',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
 });
 
 export const metadata: Metadata = {
-  title: 'CPU Scheduling Visualizer — See how an OS shares the CPU',
+  title: 'CPU.SCHED // Interactive OS Kernel Studio',
   description:
-    'A beginner-friendly, interactive simulator that shows how operating systems schedule processes using FCFS, SJF, SRTF, Priority, and Round Robin.',
+    'Full-screen interactive CPU scheduling studio blending precision telemetry with clear visual explanations across FCFS, SJF, SRTF, Priority, and Round Robin.',
 };
 
 export default function RootLayout({
@@ -19,8 +31,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
-      <body className={`${inter.variable} min-h-screen`}>{children}</body>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} min-h-screen`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

@@ -35,7 +35,7 @@ const FIELDS: FieldConfig[] = [
   {
     field: 'burstTime',
     label: 'Burst time',
-    hint: 'CPU time it needs',
+    hint: 'CPU time needed',
     min: MIN_BURST_TIME,
     max: MAX_BURST_TIME,
     fallback: 1,
@@ -53,6 +53,7 @@ const FIELDS: FieldConfig[] = [
 interface ProcessEditorProps {
   processes: ProcessInput[];
   presetId: string;
+  showPriority: boolean;
   onLoadPreset: (presetId: string) => void;
   onRandomize: () => void;
   onAdd: () => void;
@@ -63,6 +64,7 @@ interface ProcessEditorProps {
 export function ProcessEditor({
   processes,
   presetId,
+  showPriority,
   onLoadPreset,
   onRandomize,
   onAdd,
@@ -72,19 +74,20 @@ export function ProcessEditor({
   const activePreset = PRESET_SCENARIOS.find((preset) => preset.id === presetId);
   const canAdd = processes.length < MAX_PROCESS_COUNT;
   const canRemove = processes.length > 1;
+  const visibleFields = FIELDS.filter((config) => showPriority || config.field !== 'priority');
 
   return (
-    <div className="card overflow-hidden">
+    <div className="card-muted overflow-hidden border">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b px-5 py-4">
         <div className="min-w-0 flex-1">
-          <label htmlFor="example-select" className="block text-sm font-medium">
-            Example scenario
+          <label htmlFor="example-select" className="block text-[0.95rem] font-medium">
+            Scenario preset
           </label>
           <p className="mt-0.5 text-sm text-muted">
-            {activePreset?.description ?? 'You are using your own custom set of processes.'}
+            {activePreset?.description ?? 'Custom workload configured below.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <select
             id="example-select"
             name="example-scenario"
@@ -108,17 +111,19 @@ export function ProcessEditor({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" style={{ backgroundColor: 'var(--surface)' }}>
         <table className="data-table">
           <thead>
             <tr>
               <th scope="col" className="align-top">
-                <span className="text-sm text-strong">Process</span>
+                Process
               </th>
-              {FIELDS.map((config) => (
+              {visibleFields.map((config) => (
                 <th key={config.field} scope="col" className="align-top">
-                  <span className="block text-sm text-strong">{config.label}</span>
-                  <span className="block font-normal">{config.hint}</span>
+                  <span className="block text-strong">{config.label}</span>
+                  <span className="mt-0.5 block font-normal normal-case tracking-normal text-muted">
+                    {config.hint}
+                  </span>
                 </th>
               ))}
               <th scope="col">
@@ -130,16 +135,16 @@ export function ProcessEditor({
             {processes.map((process) => (
               <tr key={process.id}>
                 <td>
-                  <span className="inline-flex items-center gap-2 font-medium">
+                  <span className="font-mono-num inline-flex items-center gap-2.5 text-[0.95rem] font-medium">
                     <span
-                      className="h-2.5 w-2.5 rounded-full"
+                      className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: getProcessColor(process.colorIndex).hex }}
                       aria-hidden="true"
                     />
                     {process.id}
                   </span>
                 </td>
-                {FIELDS.map((config) => (
+                {visibleFields.map((config) => (
                   <td key={config.field}>
                     <input
                       type="number"
@@ -160,7 +165,7 @@ export function ProcessEditor({
                           ),
                         )
                       }
-                      className="input w-24 tabular-nums"
+                      className="input font-mono-num w-24"
                     />
                   </td>
                 ))}
@@ -182,13 +187,13 @@ export function ProcessEditor({
         </table>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
+      <div className="flex items-center justify-between gap-3 border-t px-5 py-3.5">
         <button type="button" className="btn" onClick={onAdd} disabled={!canAdd}>
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add process
         </button>
-        <span className="text-xs text-muted">
-          {processes.length} of {MAX_PROCESS_COUNT} processes
+        <span className="font-mono-num text-xs text-muted">
+          {processes.length} / {MAX_PROCESS_COUNT} processes
         </span>
       </div>
     </div>

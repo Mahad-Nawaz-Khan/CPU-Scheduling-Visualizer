@@ -49,7 +49,7 @@ export function NowExplainer({
   const history = ticks.slice(0, tickIndex + 1).flatMap((tick) => tick.events);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-6 pt-2 lg:grid-cols-2">
       <CpuStatusCard
         snapshot={snapshot}
         colorMap={colorMap}
@@ -83,54 +83,54 @@ function CpuStatusCard({
   const runningColor = runningId ? getProcessColor(colorMap.get(runningId) ?? 0) : null;
 
   let cpuLabel = runningId ?? 'Idle';
-  let cpuHint = 'No process is ready, so the CPU has nothing to do.';
+  let cpuHint = 'No process is ready, so the processor waits.';
   if (isFinished) {
-    cpuLabel = 'All done';
+    cpuLabel = 'Complete';
     cpuHint = 'Every process has finished its work.';
   } else if (runningId) {
-    cpuHint = `${formatUnits(snapshot.remainingBurst[runningId] ?? 0)} of work left`;
+    cpuHint = `${formatUnits(snapshot.remainingBurst[runningId] ?? 0)} remaining`;
   }
 
   return (
-    <div className="card p-5">
-      <h3 className="text-sm font-medium text-secondary">Right now · time {currentTime}</h3>
+    <div className="card-muted p-5 sm:p-6">
+      <h3 className="eyebrow">Processor state · t = {currentTime}</h3>
       <div className="mt-4 flex items-center gap-4">
         <span
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
           style={{
-            backgroundColor: runningColor?.hex ?? 'var(--surface-muted)',
+            backgroundColor: runningColor?.hex ?? 'var(--surface)',
             color: runningColor ? '#ffffff' : 'var(--text-muted)',
           }}
         >
           <Cpu className="h-6 w-6" aria-hidden="true" />
         </span>
         <div>
-          <p className="text-xs text-muted">Using the CPU</p>
-          <p className="text-xl font-semibold">{cpuLabel}</p>
-          <p className="text-sm text-muted">{cpuHint}</p>
+          <p className="text-xs uppercase tracking-wider text-muted">Active on CPU</p>
+          <p className="font-display text-3xl leading-tight">{cpuLabel}</p>
+          <p className="text-sm text-secondary">{cpuHint}</p>
         </div>
       </div>
 
       <dl className="mt-5 space-y-4 border-t pt-4">
         <QueueRow
           label="Waiting in line"
-          hint="in the order they will be picked"
+          hint="ordered by next turn"
           ids={snapshot.readyQueueIds}
           colorMap={colorMap}
           numbered
-          emptyText="Nobody is waiting."
+          emptyText="Empty"
         />
         <QueueRow
           label="Not arrived yet"
           ids={snapshot.notArrivedIds}
           colorMap={colorMap}
-          emptyText="Everyone has arrived."
+          emptyText="All arrived"
         />
         <QueueRow
           label="Finished"
           ids={snapshot.completedIds}
           colorMap={colorMap}
-          emptyText="None yet."
+          emptyText="None yet"
         />
       </dl>
     </div>
@@ -195,8 +195,8 @@ function EventsCard({
   }
 
   return (
-    <div className="card flex flex-col p-5">
-      <h3 className="text-sm font-medium text-secondary">What just happened, and why</h3>
+    <div className="card-muted flex flex-col p-5 sm:p-6">
+      <h3 className="eyebrow">Decision log at t = {currentTime}</h3>
       <ul className="mt-4 flex-1 space-y-3">
         {snapshot.events.map((event) => (
           <EventLine
@@ -204,26 +204,29 @@ function EventsCard({
             event={event}
           />
         ))}
-        {showQuietMessage && <li className="text-sm text-secondary">{quietMessage}</li>}
+        {showQuietMessage && <li className="text-[0.98rem] text-secondary">{quietMessage}</li>}
         {isFinished && (
-          <li className="text-sm font-medium text-green">
-            All processes are finished. See the results in step 4 below.
+          <li className="text-[0.98rem] font-medium text-green">
+            All processes have completed execution.
           </li>
         )}
       </ul>
 
-      <details className="group mt-5 border-t pt-4">
+      <details className="group/log mt-5 border-t pt-4">
         <summary className="flex items-center justify-between gap-2 text-sm font-medium text-accent">
-          Show the full history up to time {currentTime}
-          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+          Full chronological log (0 → {currentTime})
+          <ChevronDown
+            className="h-4 w-4 transition-transform group-open/log:rotate-180"
+            aria-hidden="true"
+          />
         </summary>
-        <ol className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+        <ol className="mt-3 max-h-60 space-y-2.5 overflow-y-auto pr-1">
           {history.map((event) => (
             <li
               key={`hist-${event.time}-${event.type}-${event.processId ?? 'none'}-${event.message}`}
               className="flex gap-3 text-sm"
             >
-              <span className="w-14 shrink-0 tabular-nums text-muted">t = {event.time}</span>
+              <span className="font-mono-num w-14 shrink-0 text-muted">t = {event.time}</span>
               <span className="text-secondary">{event.message}</span>
             </li>
           ))}
@@ -238,8 +241,8 @@ function EventLine({ event }: Readonly<{ event: DecisionEvent }>) {
   const Icon = style.icon;
 
   return (
-    <li className="flex gap-3 text-sm">
-      <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${style.className}`} aria-hidden="true" />
+    <li className="flex gap-3 text-[0.98rem]">
+      <Icon className={`mt-1 h-4 w-4 shrink-0 ${style.className}`} aria-hidden="true" />
       <span className="leading-relaxed">{event.message}</span>
     </li>
   );

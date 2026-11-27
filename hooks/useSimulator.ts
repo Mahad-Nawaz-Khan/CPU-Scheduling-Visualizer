@@ -125,6 +125,20 @@ export function useSimulator() {
     replaceProcesses(generateRandomProcesses(5), 'custom');
   }
 
+  function runExperiment(id: string, nextAlgo: AlgorithmId, quantum?: number) {
+    const preset = PRESET_SCENARIOS.find((item) => item.id === id);
+    if (preset) {
+      setProcesses(cloneProcesses(preset.processes));
+      setPresetId(preset.id);
+    }
+    setAlgorithmId(nextAlgo);
+    if (quantum !== undefined) {
+      setTimeQuantum(quantum);
+    }
+    setRequestedTime(0);
+    setIsPlaying(true);
+  }
+
   function togglePlay() {
     if (isPlaying) {
       setIsPlaying(false);
@@ -157,13 +171,12 @@ export function useSimulator() {
     updateProcess,
     removeProcess,
     randomize,
+    runExperiment,
     togglePlay,
     seek,
     setSpeed,
     stepBack: () => seek(currentTime - 1),
     stepForward: () => seek(currentTime + 1),
-    restart: () => seek(0),
-    jumpToEnd: () => seek(makespan),
     exportResults: () => exportSingleSimulationCsv(result),
     exportComparison: () => exportComparisonCsv(comparison, timeQuantum),
   };

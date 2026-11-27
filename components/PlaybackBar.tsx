@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw, SkipForward } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import type { PlaybackSpeed } from '@/lib/types';
 
 interface PlaybackBarProps {
@@ -11,14 +11,11 @@ interface PlaybackBarProps {
   onTogglePlay: () => void;
   onStepBack: () => void;
   onStepForward: () => void;
-  onRestart: () => void;
-  onJumpToEnd: () => void;
   onSeek: (time: number) => void;
   onChangeSpeed: (speed: PlaybackSpeed) => void;
 }
 
-const SPEED_OPTIONS: PlaybackSpeed[] = [0.5, 1, 2, 4];
-const SPEED_BY_VALUE: Record<string, PlaybackSpeed> = { '0.5': 0.5, '1': 1, '2': 2, '4': 4 };
+const NEXT_SPEED: Record<PlaybackSpeed, PlaybackSpeed> = { 0.5: 1, 1: 2, 2: 4, 4: 0.5 };
 
 export function PlaybackBar({
   currentTime,
@@ -28,8 +25,6 @@ export function PlaybackBar({
   onTogglePlay,
   onStepBack,
   onStepForward,
-  onRestart,
-  onJumpToEnd,
   onSeek,
   onChangeSpeed,
 }: Readonly<PlaybackBarProps>) {
@@ -45,21 +40,11 @@ export function PlaybackBar({
   }
 
   return (
-    <div className="flex flex-col gap-4 border-t pt-5 md:flex-row md:items-center">
-      <div className="flex items-center gap-1">
+    <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center">
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
-          className="btn btn-icon btn-ghost"
-          onClick={onRestart}
-          disabled={atStart}
-          aria-label="Back to the start"
-          title="Back to the start"
-        >
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          className="btn btn-icon btn-ghost"
+          className="btn btn-icon"
           onClick={onStepBack}
           disabled={atStart}
           aria-label="Back one step"
@@ -69,7 +54,7 @@ export function PlaybackBar({
         </button>
         <button
           type="button"
-          className="btn btn-primary w-28"
+          className="btn btn-primary min-w-[7.5rem]"
           onClick={onTogglePlay}
           disabled={makespan === 0}
         >
@@ -78,7 +63,7 @@ export function PlaybackBar({
         </button>
         <button
           type="button"
-          className="btn btn-icon btn-ghost"
+          className="btn btn-icon"
           onClick={onStepForward}
           disabled={atEnd}
           aria-label="Forward one step"
@@ -86,19 +71,9 @@ export function PlaybackBar({
         >
           <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </button>
-        <button
-          type="button"
-          className="btn btn-icon btn-ghost"
-          onClick={onJumpToEnd}
-          disabled={atEnd}
-          aria-label="Jump to the end"
-          title="Jump to the end"
-        >
-          <SkipForward className="h-4 w-4" aria-hidden="true" />
-        </button>
       </div>
 
-      <div className="flex flex-1 items-center gap-3">
+      <div className="flex flex-1 items-center gap-3.5">
         <label htmlFor="time-slider" className="sr-only">
           Simulation time
         </label>
@@ -111,35 +86,23 @@ export function PlaybackBar({
           step={1}
           value={currentTime}
           onChange={(event) => onSeek(Number.parseInt(event.target.value, 10))}
-          className="w-full cursor-pointer"
+          className="scrubber w-full"
         />
-        <output htmlFor="time-slider" className="whitespace-nowrap text-sm tabular-nums text-secondary">
-          Time <strong className="text-strong">{currentTime}</strong> of {makespan}
-        </output>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <label htmlFor="speed-select" className="text-sm text-muted">
-          Speed
-        </label>
-        <select
-          id="speed-select"
-          name="speed"
-          className="input"
-          value={String(speed)}
-          onChange={(event) => {
-            const next = SPEED_BY_VALUE[event.target.value];
-            if (next !== undefined) {
-              onChangeSpeed(next);
-            }
-          }}
+        <output
+          htmlFor="time-slider"
+          className="font-mono-num whitespace-nowrap text-sm text-secondary"
         >
-          {SPEED_OPTIONS.map((option) => (
-            <option key={option} value={String(option)}>
-              {option}×
-            </option>
-          ))}
-        </select>
+          {String(currentTime).padStart(2, '0')} / {String(makespan).padStart(2, '0')}
+        </output>
+        <button
+          type="button"
+          className="btn font-mono-num h-9 px-3 text-xs"
+          onClick={() => onChangeSpeed(NEXT_SPEED[speed])}
+          aria-label={`Playback speed ${speed} times. Click to change.`}
+          title="Change playback speed"
+        >
+          {speed}×
+        </button>
       </div>
     </div>
   );

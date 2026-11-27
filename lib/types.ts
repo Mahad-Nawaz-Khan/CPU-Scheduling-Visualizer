@@ -14,6 +14,8 @@ export type ThemeMode = 'dark' | 'light';
 
 export type EditableProcessField = 'arrivalTime' | 'burstTime' | 'priority';
 
+export type TokenMetric = 'arrival' | 'remaining' | 'priority';
+
 export interface ProcessInput {
   id: string;
   pidOrder: number;

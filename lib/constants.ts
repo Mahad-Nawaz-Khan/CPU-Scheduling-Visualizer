@@ -5,6 +5,7 @@ import type {
   PlaybackSpeed,
   ProcessColorSpec,
   ProcessInput,
+  TokenMetric,
 } from './types';
 
 export const MAX_PROCESS_COUNT = 15;
@@ -19,18 +20,18 @@ export const MAX_QUANTUM = 20;
 export const DEFAULT_QUANTUM = 2;
 
 export const PROCESS_PALETTE: ProcessColorSpec[] = [
-  { name: 'Indigo', hex: '#4f46e5' },
-  { name: 'Teal', hex: '#0d9488' },
-  { name: 'Amber', hex: '#d97706' },
-  { name: 'Rose', hex: '#e11d48' },
-  { name: 'Sky', hex: '#0284c7' },
-  { name: 'Violet', hex: '#7c3aed' },
-  { name: 'Emerald', hex: '#059669' },
-  { name: 'Orange', hex: '#ea580c' },
-  { name: 'Pink', hex: '#db2777' },
-  { name: 'Cyan', hex: '#0891b2' },
-  { name: 'Lime', hex: '#65a30d' },
-  { name: 'Slate', hex: '#475569' },
+  { name: 'Ultramarine', hex: '#2e5aac' },
+  { name: 'Verdigris', hex: '#1d7a74' },
+  { name: 'Terracotta', hex: '#c85a32' },
+  { name: 'Ochre', hex: '#b97818' },
+  { name: 'Aubergine', hex: '#6e478b' },
+  { name: 'Crimson', hex: '#b83b52' },
+  { name: 'Forest', hex: '#3b7554' },
+  { name: 'Cerulean', hex: '#2274a5' },
+  { name: 'Copper', hex: '#a85438' },
+  { name: 'Slate', hex: '#4b5e73' },
+  { name: 'Olive', hex: '#6b7b3a' },
+  { name: 'Mulberry', hex: '#8e4162' },
 ];
 
 export const ALGORITHM_ORDER: AlgorithmId[] = [
@@ -45,6 +46,42 @@ export const ALGORITHM_ORDER: AlgorithmId[] = [
 export const BEHAVIOR_TAG_CLASS: Record<BehaviorLabel, string> = {
   'Runs to completion': 'tag tag-green',
   'Can interrupt': 'tag tag-amber',
+};
+
+export const ALGORITHM_PILL_LABEL: Record<AlgorithmId, string> = {
+  fcfs: 'First come first',
+  sjf: 'Shortest job',
+  srtf: 'Shortest remaining',
+  'priority-np': 'Priority',
+  'priority-p': 'Priority + interrupt',
+  rr: 'Round robin',
+};
+
+export const SHOWS_PRIORITY: Record<AlgorithmId, boolean> = {
+  fcfs: false,
+  sjf: false,
+  srtf: false,
+  'priority-np': true,
+  'priority-p': true,
+  rr: false,
+};
+
+export const TOKEN_METRIC_BY_ALGO: Record<AlgorithmId, TokenMetric> = {
+  fcfs: 'arrival',
+  sjf: 'remaining',
+  srtf: 'remaining',
+  'priority-np': 'priority',
+  'priority-p': 'priority',
+  rr: 'remaining',
+};
+
+export const STAGE_HINT_BY_ALGO: Record<AlgorithmId, string> = {
+  fcfs: 'Tags show arrival time. Whoever arrived earliest is served first.',
+  sjf: 'Tags show CPU time needed. The shortest job in line goes next.',
+  srtf: 'Tags show work left. A newcomer with less work left kicks the running job out.',
+  'priority-np': 'Tags show priority (1 = most urgent). The most urgent job in line goes next.',
+  'priority-p': 'Tags show priority (1 = most urgent). A more urgent arrival takes the CPU at once.',
+  rr: 'Tags show work left. Each job runs one time slice, then rejoins the back of the line.',
 };
 
 export const ALGORITHM_META: Record<AlgorithmId, AlgorithmMeta> = {

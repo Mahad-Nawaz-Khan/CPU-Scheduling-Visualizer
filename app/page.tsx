@@ -35,11 +35,16 @@ export default function HomePage() {
       <SiteHeader
         view={view}
         theme={theme}
+        algorithmId={simulator.algorithmId}
+        currentTime={simulator.currentTime}
+        makespan={simulator.makespan}
+        cpuUtilization={simulator.result.summary.cpuUtilization}
+        isPlaying={simulator.isPlaying}
         onChangeView={changeView}
         onToggleTheme={toggleTheme}
       />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
+      <main className="w-full flex-1">
         {view === 'simulate' && (
           <SimulatorView simulator={simulator} onOpenLearn={() => changeView('learn')} />
         )}
@@ -57,9 +62,11 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-xs text-muted sm:px-6">
-          <span>CPU Scheduling Visualizer · Operating Systems course project</span>
-          <span>All scheduling runs locally in your browser.</span>
+        <div className="flex w-full flex-wrap items-center justify-between gap-2 px-5 py-6 text-xs text-muted sm:px-8 lg:px-12 2xl:px-16">
+          <span className="font-mono-num uppercase tracking-wider">
+            CPU.SCHED // Operating Systems Kernel Studio
+          </span>
+          <span className="font-mono-num">CLIENT-SIDE DETERMINISTIC SIMULATION</span>
         </div>
       </footer>
     </div>

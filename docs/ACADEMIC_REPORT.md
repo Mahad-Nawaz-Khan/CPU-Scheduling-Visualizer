@@ -34,9 +34,9 @@ The codebase separates presentation, OS scheduling logic, and performance analyt
 ```text
 +-------------------------------------------------------------------+
 | Layer 1: User Interface & Interactive Controls (app/, components/)|
-|   - ProcessEditor & StrategyPicker (guided steps 1-2)             |
-|   - GanttChart, PlaybackBar & NowExplainer (guided step 3)        |
-|   - ResultsSummary, CompareView & LearnView (step 4 + tabs)       |
+|   - Progressive disclosure: strategy pills, timeline + narration |
+|   - Expandable detail: ProcessEditor, NowExplainer, all numbers  |
+|   - CompareView & LearnView (secondary tabs)                     |
 +---------------------------------+---------------------------------+
                                   |
                                   v

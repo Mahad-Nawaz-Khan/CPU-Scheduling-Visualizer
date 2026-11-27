@@ -1,9 +1,8 @@
 'use client';
 
-import { ChevronDown, Download, Trophy } from 'lucide-react';
+import { ArrowUpRight, Download } from 'lucide-react';
 import {
   ALGORITHM_META,
-  BEHAVIOR_TAG_CLASS,
   DEFAULT_QUANTUM,
   MAX_QUANTUM,
   MIN_QUANTUM,
@@ -12,6 +11,7 @@ import {
 } from '@/lib/constants';
 import { clampInteger } from '@/lib/presets';
 import type { AlgorithmId, ProcessInput, SimulationResult, TimelineSegment } from '@/lib/types';
+import { Disclosure } from './Disclosure';
 
 interface CompareViewProps {
   results: SimulationResult[];
@@ -21,6 +21,8 @@ interface CompareViewProps {
   onOpenStrategy: (id: AlgorithmId) => void;
   onExport: () => void;
 }
+
+const ROW_GRID = 'md:grid-cols-[260px_minmax(0,1fr)_120px] md:gap-6';
 
 export function CompareView({
   results,
@@ -35,182 +37,181 @@ export function CompareView({
     (a, b) => a.summary.averageWaitingTime - b.summary.averageWaitingTime,
   );
   const best = ranked[0]?.summary.averageWaitingTime ?? 0;
-  const worst = ranked.at(-1)?.summary.averageWaitingTime ?? 0;
-  const barScale = Math.max(worst, 0.01);
   const maxMakespan = Math.max(1, ...results.map((result) => result.summary.makespan));
   const winners = ranked
     .filter((result) => result.summary.averageWaitingTime === best)
     .map((result) => ALGORITHM_META[result.algorithmId].name);
 
   return (
-    <div className="space-y-8">
-      <header className="max-w-3xl">
-        <p className="text-sm font-medium text-accent">Side-by-side comparison</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Which strategy works best here?</h1>
-        <p className="mt-3 text-base leading-relaxed text-secondary">
-          All six strategies run on exactly the same processes you set up in the Simulator. They are
-          ranked by <strong className="text-strong">average waiting time</strong>, which is how long
-          processes spent stuck in line. Lower is better.
-        </p>
-      </header>
+    <div className="w-full">
+      <div className="grid border-b xl:grid-cols-12">
+        <header className="border-b px-5 py-8 sm:px-8 sm:py-10 lg:px-12 2xl:px-16 xl:col-span-7 xl:border-b-0 xl:border-r">
+          <p className="coord-tag">
+            <span style={{ color: 'var(--accent)' }}>[ 02 / BENCHMARK ]</span>
+            <span>All Six Policies · Identical Workload</span>
+          </p>
+          <h1 className="hero-hybrid mt-4">
+            Six policies, <span className="hero-serif-accent">one</span> workload.
+          </h1>
+          <p className="lead-copy mt-4 max-w-[54ch]">
+            Every scheduling rule executes your exact process set side by side, ranked from the
+            lowest average waiting time to the highest.
+          </p>
+        </header>
 
-      <div className="card flex items-center gap-4 p-5" style={{ backgroundColor: 'var(--accent-soft)', borderColor: 'transparent' }}>
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--surface)' }}
-        >
-          <Trophy className="h-5 w-5 text-amber" aria-hidden="true" />
-        </span>
-        <p className="text-sm leading-relaxed sm:text-base">
-          <strong>{winners.join(' and ')}</strong> {winners.length > 1 ? 'tie for' : 'gives'} the
-          lowest average waiting time: <strong>{best.toFixed(2)} time units</strong>.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <label htmlFor="compare-quantum" className="text-sm text-secondary">
-            Round Robin time slice
-          </label>
-          <input
-            id="compare-quantum"
-            name="compare-quantum"
-            type="number"
-            min={MIN_QUANTUM}
-            max={MAX_QUANTUM}
-            value={timeQuantum}
-            onChange={(event) =>
-              onChangeQuantum(
-                clampInteger(
-                  Number.parseInt(event.target.value, 10),
-                  MIN_QUANTUM,
-                  MAX_QUANTUM,
-                  DEFAULT_QUANTUM,
-                ),
-              )
-            }
-            className="input w-20 tabular-nums"
-          />
+        <div className="dot-matrix flex flex-col justify-between gap-4 px-5 py-8 sm:px-8 sm:py-10 lg:px-12 2xl:px-16 xl:col-span-5">
+          <p className="coord-tag">
+            <span style={{ color: 'var(--green-text)' }}>●</span>
+            <span>Optimal Policy</span>
+          </p>
+          <div>
+            <p className="text-lg font-medium text-strong">{winners.join(' & ')}</p>
+            <p className="mt-2 flex items-baseline gap-2.5">
+              <span className="metric-numeral text-green">{best.toFixed(2)}</span>
+              <span className="font-mono-num text-xs text-muted">time units avg. wait</span>
+            </p>
+          </div>
         </div>
-        <button type="button" className="btn" onClick={onExport}>
-          <Download className="h-4 w-4" aria-hidden="true" />
-          Download comparison (CSV)
-        </button>
       </div>
 
-      <div className="card overflow-hidden">
+      <section aria-label="Ranked strategy comparison" className="blueprint-shell">
         <div
-          className="hidden gap-4 px-5 py-3 text-xs font-medium text-muted md:grid md:grid-cols-[minmax(0,240px)_minmax(0,1fr)_150px]"
-          style={{ backgroundColor: 'var(--surface-muted)' }}
+          className={`eyebrow hidden border-b px-5 py-3.5 sm:px-8 lg:px-12 2xl:px-16 md:grid ${ROW_GRID}`}
+          style={{ backgroundColor: 'var(--bg-subtle)' }}
         >
-          <span>Strategy</span>
-          <span>Timeline (time 0 to {maxMakespan})</span>
-          <span className="text-right">Avg. waiting time</span>
+          <span>Rule</span>
+          <span>Synchronized timeline (0 → {maxMakespan})</span>
+          <span className="text-right">Avg. wait</span>
         </div>
+
         <ol className="divide-y">
           {ranked.map((result, index) => {
             const meta = ALGORITHM_META[result.algorithmId];
             const average = result.summary.averageWaitingTime;
             const isBest = average === best;
-            const quantumSuffix = result.algorithmId === 'rr' ? ` (slice ${timeQuantum})` : '';
+            const suffix = result.algorithmId === 'rr' ? ` · slice ${timeQuantum}` : '';
 
             return (
               <li
                 key={result.algorithmId}
-                className="grid items-center gap-4 px-5 py-4 md:grid-cols-[minmax(0,240px)_minmax(0,1fr)_150px]"
+                className={`grid items-center gap-4 px-5 py-5 sm:px-8 lg:px-12 2xl:px-16 ${ROW_GRID}`}
               >
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 w-5 text-sm font-semibold tabular-nums text-muted">
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => onOpenStrategy(result.algorithmId)}
-                      className="text-left text-sm font-medium hover:underline"
-                      title="Open this strategy in the Simulator"
-                    >
-                      {meta.name}
-                      {quantumSuffix}
-                    </button>
-                    <div className="mt-1">
-                      <span className={BEHAVIOR_TAG_CLASS[meta.behaviorLabel]}>
-                        {meta.behaviorLabel}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <MiniTimeline timeline={result.timeline} maxMakespan={maxMakespan} colorMap={colorMap} />
-
-                <div>
-                  <div className="flex items-baseline justify-between gap-2 md:justify-end">
-                    <span className="text-xs text-muted md:hidden">Avg. waiting time</span>
-                    <span className={`text-lg font-semibold tabular-nums ${isBest ? 'text-green' : ''}`}>
-                      {average.toFixed(2)}
-                    </span>
-                  </div>
-                  <div
-                    className="mt-1.5 h-1.5 overflow-hidden rounded-full"
-                    style={{ backgroundColor: 'var(--surface-muted)' }}
+                <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => onOpenStrategy(result.algorithmId)}
+                    className="group inline-flex items-center gap-1.5 text-left text-[1.02rem] font-medium hover:text-accent"
+                    title="Open this rule in the Simulator"
                   >
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.max((average / barScale) * 100, 2)}%`,
-                        backgroundColor: isBest ? 'var(--green-text)' : 'var(--accent)',
-                      }}
+                    <span className="font-mono-num mr-1 text-xs text-muted">0{index + 1}</span>
+                    <span>{meta.name}</span>
+                    <ArrowUpRight
+                      className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-hidden="true"
                     />
-                  </div>
+                  </button>
+                  <p className="mt-0.5 pl-6 text-xs text-muted">
+                    {meta.behaviorLabel}
+                    {suffix}
+                  </p>
                 </div>
+
+                <MiniTimeline
+                  timeline={result.timeline}
+                  maxMakespan={maxMakespan}
+                  colorMap={colorMap}
+                />
+
+                <p
+                  className={`font-display text-3xl tabular-nums md:text-right ${
+                    isBest ? 'text-green' : ''
+                  }`}
+                >
+                  {average.toFixed(2)}
+                </p>
               </li>
             );
           })}
         </ol>
-      </div>
 
-      <details className="card group overflow-hidden">
-        <summary className="flex items-center justify-between gap-3 px-5 py-4">
-          <span>
-            <span className="block text-sm font-medium">See every metric</span>
-            <span className="block text-xs text-muted">
-              Turnaround, response time, CPU usage, and interruptions for each strategy
-            </span>
-          </span>
-          <ChevronDown
-            className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180"
-            aria-hidden="true"
-          />
-        </summary>
-        <div className="overflow-x-auto border-t">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th scope="col">Strategy</th>
-                <th scope="col">Avg. waiting</th>
-                <th scope="col">Avg. turnaround</th>
-                <th scope="col">Avg. response</th>
-                <th scope="col">CPU busy</th>
-                <th scope="col">Interruptions</th>
-                <th scope="col">Finished at</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ranked.map((result) => (
-                <tr key={`row-${result.algorithmId}`}>
-                  <td className="font-medium">{ALGORITHM_META[result.algorithmId].name}</td>
-                  <td>{result.summary.averageWaitingTime.toFixed(2)}</td>
-                  <td>{result.summary.averageTurnaroundTime.toFixed(2)}</td>
-                  <td>{result.summary.averageResponseTime.toFixed(2)}</td>
-                  <td>{Math.round(result.summary.cpuUtilization)}%</td>
-                  <td>{result.summary.preemptionCount}</td>
-                  <td>{result.summary.makespan}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
+        <Disclosure
+          variant="panel"
+          code="MATRIX"
+          title="Tune Round Robin slice, view full matrix & download CSV"
+          hint="Turnaround, response time, CPU utilization, and interruptions across all six rules"
+        >
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="compare-quantum"
+                  className="text-[0.95rem] font-medium text-secondary"
+                >
+                  Round Robin time slice
+                </label>
+                <input
+                  id="compare-quantum"
+                  name="compare-quantum"
+                  type="number"
+                  min={MIN_QUANTUM}
+                  max={MAX_QUANTUM}
+                  value={timeQuantum}
+                  onChange={(event) =>
+                    onChangeQuantum(
+                      clampInteger(
+                        Number.parseInt(event.target.value, 10),
+                        MIN_QUANTUM,
+                        MAX_QUANTUM,
+                        DEFAULT_QUANTUM,
+                      ),
+                    )
+                  }
+                  className="input font-mono-num w-20 text-center"
+                />
+              </div>
+              <button type="button" className="btn" onClick={onExport}>
+                <Download className="h-4 w-4" aria-hidden="true" />
+                Download comparison CSV
+              </button>
+            </div>
+
+            <div className="card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Rule</th>
+                      <th scope="col">Avg. wait</th>
+                      <th scope="col">Avg. turnaround</th>
+                      <th scope="col">Avg. response</th>
+                      <th scope="col">CPU busy</th>
+                      <th scope="col">Interruptions</th>
+                      <th scope="col">Makespan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-mono-num">
+                    {ranked.map((result) => (
+                      <tr key={`row-${result.algorithmId}`}>
+                        <td className="font-sans font-medium">
+                          {ALGORITHM_META[result.algorithmId].name}
+                        </td>
+                        <td className="font-semibold">
+                          {result.summary.averageWaitingTime.toFixed(2)}
+                        </td>
+                        <td>{result.summary.averageTurnaroundTime.toFixed(2)}</td>
+                        <td>{result.summary.averageResponseTime.toFixed(2)}</td>
+                        <td>{Math.round(result.summary.cpuUtilization)}%</td>
+                        <td>{result.summary.preemptionCount}</td>
+                        <td>{result.summary.makespan}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </Disclosure>
+      </section>
     </div>
   );
 }
@@ -224,8 +225,8 @@ interface MiniTimelineProps {
 function MiniTimeline({ timeline, maxMakespan, colorMap }: Readonly<MiniTimelineProps>) {
   return (
     <div
-      className="flex h-7 w-full overflow-hidden rounded-md"
-      style={{ backgroundColor: 'var(--surface-muted)' }}
+      className="flex h-11 w-full overflow-hidden rounded-lg border"
+      style={{ backgroundColor: 'var(--bg-subtle)' }}
     >
       {timeline.map((segment) => {
         const isIdle = segment.processId === null;
@@ -234,7 +235,7 @@ function MiniTimeline({ timeline, maxMakespan, colorMap }: Readonly<MiniTimeline
           <div
             key={`${segment.startTime}-${label}`}
             title={`${label}: from time ${segment.startTime} to ${segment.endTime}`}
-            className={`flex items-center justify-center overflow-hidden border-r text-[11px] font-semibold ${
+            className={`font-mono-num flex items-center justify-center overflow-hidden border-r text-xs font-semibold ${
               isIdle ? 'idle-hatch text-muted' : 'text-white'
             }`}
             style={{
@@ -243,7 +244,7 @@ function MiniTimeline({ timeline, maxMakespan, colorMap }: Readonly<MiniTimeline
               borderColor: 'var(--surface)',
             }}
           >
-            <span className="truncate px-0.5">{label}</span>
+            <span className="truncate px-1">{label}</span>
           </div>
         );
       })}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { ThemeMode } from '@/lib/types';
 
-const THEME_STORAGE_KEY = 'cpu-visualizer-theme-v2';
+const THEME_STORAGE_KEY = 'cpu-studio-theme-v3';
 const NEXT_THEME: Record<ThemeMode, ThemeMode> = { light: 'dark', dark: 'light' };
 
 function applyTheme(theme: ThemeMode): void {
@@ -11,7 +11,7 @@ function applyTheme(theme: ThemeMode): void {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<ThemeMode>('light');
+  const [theme, setTheme] = useState<ThemeMode>('dark');
 
   useEffect(() => {
     const saved = globalThis.localStorage.getItem(THEME_STORAGE_KEY);
